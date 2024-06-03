@@ -1,0 +1,66 @@
+#!/bin/bash
+
+score () {
+  CHOICE_1=$1
+  CHOICE_2=$2
+
+  if [[ $CHOICE_1 == $CHOICE_2 ]]; then
+    echo "0"
+  elif [[ $CHOICE_1 == "rock" ]] && [[ $CHOICE_2 == "paper" ]]; then
+    echo "2"
+  elif [[ $CHOICE_1 == "rock" ]] && [[ $CHOICE_2 == "scissors" ]]; then
+    echo "1"
+  elif [[ $CHOICE_1 == "paper" ]] && [[ $CHOICE_2 == "rock" ]]; then
+    echo "1"
+  elif [[ $CHOICE_1 == "paper" ]] && [[ $CHOICE_2 == "scissors" ]]; then
+    echo "2"
+  elif [[ $CHOICE_1 == "scissors" ]] && [[ $CHOICE_2 == "rock" ]]; then
+    echo "2"
+  elif [[ $CHOICE_1 == "scissors" ]] && [[ $CHOICE_2 == "paper" ]]; then
+    echo "1"
+  fi
+}
+
+CHOICES=()
+for CHOICE in $(ls choices); do
+  NAME=$(cat "choices/$CHOICE" | cut -d ' ' -f 1)
+  SALT=$(cat "choices/$CHOICE" | cut -d ' ' -f 2)
+  HASH=$(cat "choices/$CHOICE" | cut -d ' ' -f 3)
+
+  ROCK_HASH=$(echo "$NAME$SALT"rock | cksum | cut -d ' ' -f 1)
+  PAPER_HASH=$(echo "$NAME$SALT"paper | cksum | cut -d ' ' -f 1)
+  SCISSORS_HASH=$(echo "$NAME$SALT"scissors | cksum | cut -d ' ' -f 1)
+  if [[ $ROCK_HASH == $HASH ]]; then
+    RAW_CHOICE="rock"
+  elif [[ $PAPER_HASH == $HASH ]]; then
+    RAW_CHOICE="paper"
+  elif [[ $SCISSORS_HASH == $HASH ]]; then
+    RAW_CHOICE="scissors"
+  fi;
+
+  CHOICES+=( "$NAME $RAW_CHOICE" )
+done
+
+# Score
+PLAYER_1_NAME=$(echo ${CHOICES[0]} | cut -d ' ' -f 1)
+PLAYER_1_CHOICE=$(echo ${CHOICES[0]} | cut -d ' ' -f 2)
+PLAYER_2_NAME=$(echo ${CHOICES[1]} | cut -d ' ' -f 1)
+PLAYER_2_CHOICE=$(echo ${CHOICES[1]} | cut -d ' ' -f 2)
+
+RESULT=$(score $PLAYER_1_CHOICE $PLAYER_2_CHOICE)
+
+if [[ $RESULT == 0 ]]; then
+  echo "Tie! $PLAYER_1_NAME and $PLAYER_2_NAME both threw ${PLAYER_1_CHOICE}" >> results
+elif [[ $RESULT == 1 ]]; then
+  echo "$PLAYER_1_NAME threw $PLAYER_1_CHOICE, beating $PLAYER_2_NAME's $PLAYER_2_CHOICE" >> results
+elif [[ $RESULT == 2 ]]; then
+  echo "$PLAYER_2_NAME threw $PLAYER_2_CHOICE, beating $PLAYER_1_NAME's $PLAYER_1_CHOICE" >> results
+fi
+
+tail -n 1 results
+
+# Reinitialize
+rm -r choices
+mkdir choices
+touch choices/.gitkeep
+git commit -am "Update game with latest game"

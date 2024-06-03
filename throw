@@ -1,0 +1,14 @@
+#!/bin/bash
+
+NAME=$(cat player)
+RAW_CHOICE=$(cat choice | awk '{print tolower($0)}')
+# Choice needs to be valid
+SALT="$RANDOM"
+OBSCURED_CHOICE=$(echo "$NAME$SALT$RAW_CHOICE" | cksum | cut -d ' ' -f 1)
+
+echo "" > choice
+echo "$NAME $SALT $OBSCURED_CHOICE" > "choices/$OBSCURED_CHOICE"
+echo "You threw $RAW_CHOICE"
+
+git add -A
+git commit -m "$NAME made their choice"
